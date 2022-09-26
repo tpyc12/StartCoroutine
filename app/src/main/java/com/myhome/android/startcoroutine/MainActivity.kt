@@ -6,8 +6,10 @@ import android.os.Looper
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import com.myhome.android.startcoroutine.databinding.ActivityMainBinding
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,10 +21,23 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         binding.buttonLoad.setOnClickListener {
-//            lifecycleScope.launch {
-//                loadData()
-//            }
-            loadWithoutCoroutine()
+            val jobCity = lifecycleScope.launch {
+                binding.progress.isVisible = true
+                binding.buttonLoad.isEnabled = false
+                val city = loadCity()
+                binding.tvLocation.text = city
+            }
+            val jobTemperature = lifecycleScope.launch {
+                val temperature = loadTemperature()
+                binding.tvTemperature.text = temperature.toString()
+            }
+            lifecycleScope.launch {
+                jobCity.join()
+                jobTemperature.join()
+                binding.progress.isVisible = false
+                binding.buttonLoad.isEnabled = true
+            }
+//            loadWithoutCoroutine()
         }
     }
 
@@ -32,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         val city = loadCity()
 
         binding.tvLocation.text = city
-        val temperature = loadTemperature(city)
+        val temperature = loadTemperature()
 
         binding.tvTemperature.text = temperature.toString()
         binding.progress.isVisible = false
@@ -82,13 +97,8 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private suspend fun loadTemperature(city: String): Int {
-        Toast.makeText(
-            this,
-            "Loading temperature for city:$city",
-            Toast.LENGTH_SHORT
-        ).show()
-        delay(5000)
+    private suspend fun loadTemperature(): Int {
+        delay(2000)
         return 17
     }
 
