@@ -3,7 +3,6 @@ package com.myhome.android.startcoroutine
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.*
-import kotlin.concurrent.thread
 
 class MainViewModel: ViewModel() {
 
@@ -19,13 +18,18 @@ class MainViewModel: ViewModel() {
             delay(2000)
             Log.d(LOG_TAG,  "second coroutine finished")
         }
-        thread {
-            Thread.sleep(1000)
-            parentJob.cancel()
-            Log.d(LOG_TAG, "Parent job is active: ${parentJob.isActive}")
+        val childJob3 = coroutineScope.launch {
+            delay(1000)
+            try {
+                error()
+            } catch (e: Exception) {
+            }
+            Log.d(LOG_TAG, "third coroutine finished")
         }
-        Log.d(LOG_TAG, parentJob.children.contains(childJob1).toString())
-        Log.d(LOG_TAG, parentJob.children.contains(childJob2).toString())
+    }
+
+    private fun error(){
+        throw RuntimeException()
     }
 
     override fun onCleared() {
