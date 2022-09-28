@@ -7,7 +7,10 @@ import kotlinx.coroutines.*
 class MainViewModel: ViewModel() {
 
     private val parentJob = Job()
-    private val coroutineScope = CoroutineScope(Dispatchers.Main + parentJob)
+    private val exceptionHandler = CoroutineExceptionHandler{ _, throwable ->
+        Log.d(LOG_TAG, "Exception catch: $throwable")
+    }
+    private val coroutineScope = CoroutineScope(Dispatchers.Main + parentJob + exceptionHandler)
 
     fun method(){
         val childJob1 = coroutineScope.launch {
@@ -18,12 +21,9 @@ class MainViewModel: ViewModel() {
             delay(2000)
             Log.d(LOG_TAG,  "second coroutine finished")
         }
-        val childJob3 = coroutineScope.launch {
+        val childJob3 = coroutineScope.async {
             delay(1000)
-            try {
                 error()
-            } catch (e: Exception) {
-            }
             Log.d(LOG_TAG, "third coroutine finished")
         }
     }
