@@ -2,42 +2,37 @@ package com.myhome.android.startcoroutine
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.*
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 
-class MainViewModel: ViewModel() {
+class MainViewModel : ViewModel() {
 
-    private val parentJob = Job()
-    private val exceptionHandler = CoroutineExceptionHandler{ _, throwable ->
-        Log.d(LOG_TAG, "Exception catch: $throwable")
-    }
-    private val coroutineScope = CoroutineScope(Dispatchers.Main + parentJob + exceptionHandler)
-
-    fun method(){
-        val childJob1 = coroutineScope.launch {
+    fun method() {
+        val job = viewModelScope.launch(Dispatchers.Default) {
+            Log.d(LOG_TAG, "Started")
+            val begin = System.currentTimeMillis()
+            var count = 0
+            for (i in 0 until 100_000_000) {
+                for (j in 0 until 10) {
+                    ensureActive()
+                    count++
+                }
+            }
+            Log.d(LOG_TAG, "Finished ${System.currentTimeMillis() - begin}")
+        }
+        job.invokeOnCompletion {
+            Log.d(LOG_TAG, "Coroutine was canceled, $it")
+        }
+        viewModelScope.launch {
             delay(3000)
-            Log.d(LOG_TAG,  "first coroutine finished")
-        }
-        val childJob2 = coroutineScope.launch {
-            delay(2000)
-            Log.d(LOG_TAG,  "second coroutine finished")
-        }
-        val childJob3 = coroutineScope.async {
-            delay(1000)
-                error()
-            Log.d(LOG_TAG, "third coroutine finished")
+            job.cancel()
         }
     }
 
-    private fun error(){
-        throw RuntimeException()
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        coroutineScope.cancel()
-    }
-
-    companion object{
+    companion object {
 
         private const val LOG_TAG = "MainViewModel"
     }
